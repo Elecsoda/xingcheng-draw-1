@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学数学思维训练 v4.0</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f8fafc; }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 题目文本样式 */
+        .problem-text { line-height: 2.2; font-size: 1.15rem; color: #334155; }
+        .highlight-segment { 
+            border-bottom: 2px solid transparent; 
+            padding: 2px 4px; 
+            margin: 0 1px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .highlight-segment.active {
+            background-color: #fef08a; border-bottom-color: #ca8a04; color: #854d0e; font-weight: bold;
+            box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+        }
+        .highlight-segment.completed {
+            background-color: #dcfce7; border-bottom-color: #16a34a; color: #166534; font-weight: 500;
+        }
+
+        /* 填空输入框 */
+        .input-box {
+            border: 2px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; text-align: center; width: 90px;
+            font-weight: bold; color: #1e293b; transition: all 0.2s;
+        }
+        .input-box:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .input-box.correct { border-color: #22c55e; background-color: #f0fdf4; color: #15803d; }
+        .input-box.wrong { border-color: #ef4444; background-color: #fef2f2; color: #b91c1c; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 题库数据 ---
+        const problems = [
+            // 题目 1: 年龄问题 (差倍)
+            {
+                id: 1,
+                title: "年龄问题 (差倍模型)",
+                content: [
+                    { text: "爸爸今年", id: "p1" },
+                    { text: "比儿子大32岁", id: "rel1", type: "relation", question: "这句话说明了什么数量关系？", 
+                      options: [
+                          { text: "爸爸 - 儿子 = 32", correct: true },
+                          { text: "爸爸 + 儿子 = 32", correct: false }
+                      ] 
+                    },
+                    { text: "。", id: "p2" },
+                    { text: "8年后", id: "time", type: "condition", question: "8年后，两人的年龄差会变吗？", 
+                      options: [
+                          { text: "变大 (都长了8岁)", correct: false },
+                          { text: "不变 (差仍然是32岁)", correct: true }
+                      ]
+                    },
+                    { text: "，爸爸的年龄是", id: "p3" },
+                    { text: "儿子的3倍", id: "rel2", type: "relation", question: "此时两人的倍数关系是？", 
+                      options: [
+                          { text: "爸爸 = 儿子 × 3", correct: true },
+                          { text: "儿子 = 爸爸 × 3", correct: false }
+                      ]
+                    },
+                    { text: "。请问儿子今年多少岁？", id: "q1" }
+                ],
+                diagramData: {
+                    type: "age_diff", diffValue: 32, multiple: 3, labels: { small: "儿子", big: "爸爸" },
+                    questions: [
+                        { label: "年龄差是几岁？", answer: "32", unit: "岁" },
+                        { label: "图上多出的部分是几份？(3倍-1倍)", answer: "2", unit: "份" },
+                        { label: "8年后儿子几岁？(差÷份数)", answer: "16", unit: "岁" },
+                        { label: "儿子今年几岁？(16-8)", answer: "8", unit: "岁" }
+                    ]
+                }
+            },
+            // 题目 2: 和差问题 (移多补少)
+            {
+                id: 2,
+                title: "和差问题 (给来给去)",
+                content: [
+                    { text: "甲、乙两个班", id: "p1" },
+                    { text: "共有图书96本", id: "rel1", type: "relation", question: "这句话告诉我们什么不变？", 
+                      options: [
+                          { text: "图书的总数 (和) 不变", correct: true },
+                          { text: "两个班的差不变", correct: false }
+                      ] 
+                    },
+                    { text: "。如果", id: "p2" },
+                    { text: "甲班给乙班8本", id: "act1", type: "action", question: "甲给乙8本后，甲乙的数量关系是？", 
+                      options: [
+                          { text: "甲减少8，乙增加8", correct: true },
+                          { text: "甲变多了", correct: false }
+                      ]
+                    },
+                    { text: "，", id: "p3" },
+                    { text: "两个班就一样多", id: "rel2", type: "relation", question: "现在每个班有多少本？", 
+                      options: [
+                          { text: "96 ÷ 2 = 48 本", correct: true },
+                          { text: "无法确定", correct: false }
+                      ]
+                    },
+                    { text: "。甲班原来有多少本？", id: "q1" }
+                ],
+                diagramData: {
+                    type: "transfer", total: 96, transfer: 8, labels: { a: "甲班", b: "乙班" },
+                    questions: [
+                        { label: "现在甲班有多少本？(总数÷2)", answer: "48", unit: "本" },
+                        { label: "甲班原来是多少？(倒推: 48+8)", answer: "56", unit: "本" }
+                    ]
+                }
+            },
+            // 题目 3: 还原问题 (三人倒推) - 新增
+            {
+                id: 3,
+                title: "还原问题 (三人分脸谱)",
+                content: [
+                    { text: "张、李、王三人", id: "p1" },
+                    { text: "一共画了21张脸谱", id: "data1", type: "relation", question: "这是什么量不变？", 
+                      options: [
+                          { text: "总数不变", correct: true },
+                          { text: "每个人数量不变", correct: false }
+                      ]
+                    },
+                    { text: "。如果张给李3张，", id: "act1" },
+                    { text: "李再给王2张", id: "act2", type: "action", question: "这涉及到哪两个人的变化？", 
+                      options: [
+                          { text: "李减少2，王增加2", correct: true },
+                          { text: "张减少2，王增加2", correct: false }
+                      ]
+                    },
+                    { text: "，", id: "p2" },
+                    { text: "三人就一样多", id: "res", type: "relation", question: "最后每个人有多少张？", 
+                      options: [
+                          { text: "21 ÷ 3 = 7 张", correct: true },
+                          { text: "无法计算", correct: false }
+                      ]
+                    },
+                    { text: "。李师傅原来画了多少张？", id: "q1" }
+                ],
+                diagramData: {
+                    type: "multi_transfer", total: 21, finalEach: 7, 
+                    steps: [{ from: "张", to: "李", val: 3 }, { from: "李", to: "王", val: 2 }],
+                    labels: ["张", "李", "王"],
+                    questions: [
+                        { label: "最后李师傅有几张？", answer: "7", unit: "张" },
+                        { label: "给王2张之前，李有几张？(7+2)", answer: "9", unit: "张" },
+                        { label: "收张3张之前(原来)，李有几张？(9-3)", answer: "6", unit: "张" }
+                    ]
+                }
+            },
+            // 题目 4: 盈亏问题 (绳子测楼) - 新增
+            {
+                id: 4,
+                title: "盈亏问题 (绳子测楼)",
+                content: [
+                    { text: "用绳子测楼高。", id: "p1" },
+                    { text: "折成4段量，绳比楼高5米", id: "c1", type: "relation", question: "这说明绳子总长是多少？", 
+                      options: [
+                          { text: "4 × (楼高 + 5)", correct: true },
+                          { text: "4 × 楼高 + 5", correct: false }
+                      ]
+                    },
+                    { text: "；", id: "p2" },
+                    { text: "折成5段量，绳比楼高2米", id: "c2", type: "relation", question: "这说明绳子总长还可以怎么表示？", 
+                      options: [
+                          { text: "5 × (楼高 + 2)", correct: true },
+                          { text: "5 × (楼高 - 2)", correct: false }
+                      ]
+                    },
+                    { text: "。绳子有多少米？", id: "q1" }
+                ],
+                diagramData: {
+                    type: "rope_measure", 
+                    cond1: { parts: 4, extra: 5 }, 
+                    cond2: { parts: 5, extra: 2 },
+                    questions: [
+                        { label: "4段时，绳子总共比4倍楼高多多少？(4×5)", answer: "20", unit: "米" },
+                        { label: "5段时，绳子总共比5倍楼高多多少？(5×2)", answer: "10", unit: "米" },
+                        { label: "楼高是多少？(差÷差: (20-10)÷(5-4))", answer: "10", unit: "米" },
+                        { label: "绳子多长？(4×(10+5))", answer: "60", unit: "米" }
+                    ]
+                }
+            },
+            // 题目 5: 复杂年龄 (时光轴) - 新增
+            {
+                id: 5,
+                title: "年龄问题 (时光穿梭)",
+                content: [
+                    { text: "老师对小明说：", id: "p1" },
+                    { text: "“你是我这么大时，我已经44岁了”", id: "c1", type: "relation", question: "这句话是在说谁的年龄？", 
+                      options: [
+                          { text: "未来的事 (两人都变老了)", correct: true },
+                          { text: "过去的事", correct: false }
+                      ]
+                    },
+                    { text: "；", id: "p2" },
+                    { text: "“我是你这么大时，你才2岁”", id: "c2", type: "relation", question: "这句话是在说谁的年龄？", 
+                      options: [
+                          { text: "过去的事 (两人都变年轻了)", correct: true },
+                          { text: "现在的年龄", correct: false }
+                      ]
+                    },
+                    { text: "。老师今年多少岁？", id: "q1" }
+                ],
+                diagramData: {
+                    type: "age_timeline", low: 2, high: 44,
+                    questions: [
+                        { label: "从2岁到44岁，一共跨越了几个年龄差？", answer: "3", unit: "个", hint: "画图看：过去->现在->未来" },
+                        { label: "两人的年龄差是多少？((44-2)÷3)", answer: "14", unit: "岁" },
+                        { label: "老师今年几岁？(2 + 差 + 差)", answer: "30", unit: "岁" }
+                    ]
+                }
+            }
+        ];
+
+        // --- 可视化组件 ---
+
+        // 1. 差倍图 (年龄)
+        const AgeVisual = ({ data }) => (
+            <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+                <div className="text-xs text-center text-gray-500 mb-2">8年后的情况</div>
+                <div className="flex items-center">
+                    <div className="w-16 text-right pr-3 font-bold text-gray-600">{data.labels.small}</div>
+                    <div className="h-10 bg-green-200 border-2 border-green-500 w-1/4 rounded flex items-center justify-center text-xs text-green-900 font-bold">1份</div>
+                </div>
+                <div className="flex items-center relative">
+                    <div className="w-16 text-right pr-3 font-bold text-gray-600">{data.labels.big}</div>
+                    <div className="h-10 bg-blue-100 border-2 border-blue-500 w-3/4 rounded flex divide-x-2 divide-blue-400">
+                        <div className="flex-1 flex items-center justify-center text-xs text-blue-800 bg-blue-200">1份</div>
+                        <div className="flex-1 flex items-center justify-center text-xs text-blue-800">1份</div>
+                        <div className="flex-1 flex items-center justify-center text-xs text-blue-800">1份</div>
+                    </div>
+                    <div className="absolute left-[25%] right-0 -bottom-6 h-4 border-l border-r border-t border-red-400 flex items-start justify-center">
+                        <span className="bg-red-50 text-red-600 text-[10px] px-1 rounded -mt-2">相差 {data.diffValue} 岁</span>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // 2. 移多补少图 (和差)
+        const TransferVisual = ({ data }) => (
+            <div className="flex gap-8 items-end h-40 w-full justify-center">
+                <div className="relative w-20">
+                    <div className="absolute -top-6 w-full text-center font-bold text-blue-700">{data.labels.a}</div>
+                    <div className="h-28 bg-blue-200 border-2 border-blue-500 rounded-t-lg relative w-full">
+                        <div className="absolute top-0 left-0 w-full h-6 bg-yellow-300 border-b border-dashed border-blue-600 flex items-center justify-center text-[10px] text-yellow-900">
+                            -{data.transfer}
+                        </div>
+                    </div>
+                    <div className="absolute top-0 -right-12 text-blue-400 text-xl">➔</div>
+                </div>
+                <div className="relative w-20">
+                    <div className="absolute -top-6 w-full text-center font-bold text-green-700">{data.labels.b}</div>
+                    <div className="h-22 bg-green-200 border-2 border-green-500 rounded-t-lg w-full flex items-end justify-center pb-2">
+                        <span className="text-[10px] text-green-800">原来</span>
+                    </div>
+                    <div className="absolute -top-6 left-0 w-full h-6 border-2 border-dashed border-green-400 rounded-t-lg opacity-50"></div>
+                </div>
+            </div>
+        );
+
+        // 3. 多人倒推图 (还原)
+        const MultiTransferVisual = ({ data }) => (
+            <div className="flex justify-between items-center w-full px-4 h-40">
+                {data.labels.map((name, i) => (
+                    <div key={i} className="flex flex-col items-center relative">
+                        <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-400 rounded-lg flex flex-col justify-end items-center p-2 relative">
+                            <span className="text-2xl font-bold text-indigo-700">{data.finalEach}</span>
+                            <span className="text-xs text-indigo-400">最后</span>
+                            {/* 动态标记 */}
+                            {i === 1 && (
+                                <div className="absolute -top-4 w-full text-center text-xs bg-yellow-100 text-yellow-800 px-1 rounded border border-yellow-300">
+                                    我是关键
+                                </div>
+                            )}
+                        </div>
+                        <span className="font-bold mt-2 text-gray-700">{name}</span>
+                    </div>
+                ))}
+                {/* 倒推箭头覆盖 */}
+                <div className="absolute top-10 left-20 right-20 h-10 pointer-events-none">
+                    <div className="absolute left-[20%] top-0 text-xs text-red-500 font-bold">← 逆向: +3</div>
+                    <div className="absolute right-[20%] top-0 text-xs text-green-500 font-bold">逆向: +2 →</div>
+                </div>
+            </div>
+        );
+
+        // 4. 绳子测楼图 (盈亏)
+        const RopeVisual = ({ data }) => (
+            <div className="flex gap-6 w-full justify-center items-end h-48">
+                {/* 楼房 */}
+                <div className="w-16 h-32 bg-gray-300 border-2 border-gray-500 rounded-t flex items-center justify-center text-gray-600 font-bold writing-vertical">
+                    楼房
+                </div>
+                
+                {/* 方案1 */}
+                <div className="flex flex-col items-center">
+                    <div className="flex flex-col-reverse h-40 w-8 border-r-2 border-dashed border-blue-300 relative">
+                        {[...Array(data.cond1.parts)].map((_, i) => (
+                            <div key={i} className="w-full h-8 border-b border-blue-400 bg-blue-100 flex items-center justify-center text-[10px]">1段</div>
+                        ))}
+                    </div>
+                    <span className="text-xs mt-1 text-blue-600">4段余{data.cond1.extra}</span>
+                </div>
+
+                {/* 方案2 */}
+                <div className="flex flex-col items-center">
+                    <div className="flex flex-col-reverse h-40 w-8 border-r-2 border-dashed border-green-300 relative">
+                        {[...Array(data.cond2.parts)].map((_, i) => (
+                            <div key={i} className="w-full h-[25.6px] border-b border-green-400 bg-green-100 flex items-center justify-center text-[10px]">1段</div>
+                        ))}
+                    </div>
+                    <span className="text-xs mt-1 text-green-600">5段余{data.cond2.extra}</span>
+                </div>
+            </div>
+        );
+
+        // 5. 时光轴图 (复杂年龄)
+        const TimeLineVisual = ({ data }) => (
+            <div className="w-full h-32 relative mt-6 px-4">
+                {/* 轴线 */}
+                <div className="absolute top-1/2 left-4 right-4 h-1 bg-gray-300 -translate-y-1/2"></div>
+                
+                {/* 点 */}
+                <div className="absolute top-1/2 left-4 w-4 h-4 bg-green-500 rounded-full -translate-y-1/2 -translate-x-1/2 border-2 border-white shadow"></div>
+                <div className="absolute top-1/2 left-[33%] w-4 h-4 bg-blue-400 rounded-full -translate-y-1/2 -translate-x-1/2 border-2 border-white shadow"></div>
+                <div className="absolute top-1/2 left-[66%] w-4 h-4 bg-blue-600 rounded-full -translate-y-1/2 -translate-x-1/2 border-2 border-white shadow"></div>
+                <div className="absolute top-1/2 right-4 w-4 h-4 bg-orange-500 rounded-full -translate-y-1/2 -translate-x-1/2 border-2 border-white shadow"></div>
+
+                {/* 标注 */}
+                <div className="absolute top-[65%] left-4 text-xs font-bold -translate-x-1/2">{data.low}岁</div>
+                <div className="absolute top-[30%] left-[16.5%] text-xs text-gray-500 -translate-x-1/2">1个差</div>
+                <div className="absolute top-[65%] left-[33%] text-xs -translate-x-1/2 text-blue-500">小明</div>
+                <div className="absolute top-[30%] left-[50%] text-xs text-gray-500 -translate-x-1/2">1个差</div>
+                <div className="absolute top-[65%] left-[66%] text-xs -translate-x-1/2 text-blue-700">老师</div>
+                <div className="absolute top-[30%] left-[83.5%] text-xs text-gray-500 -translate-x-1/2">1个差</div>
+                <div className="absolute top-[65%] right-4 text-xs font-bold -translate-x-1/2">{data.high}岁</div>
+            </div>
+        );
+
+        // --- 核心组件 ---
+        
+        const Translator = ({ problem, completedSegments, setCompletedSegments, onComplete }) => {
+            const interactiveSegments = problem.content.map((s, i) => ({...s, originalIndex: i})).filter(s => s.type);
+            const currentInteractive = interactiveSegments.find(s => !completedSegments.has(s.originalIndex));
+            const [feedback, setFeedback] = useState(null);
+
+            useEffect(() => {
+                if (!currentInteractive) {
+                    onComplete();
+                }
+            }, [currentInteractive, onComplete]);
+
+            const handleOptionClick = (isCorrect) => {
+                if (isCorrect) {
+                    setFeedback({ type: 'success', text: '✅ 分析正确！' });
+                    setTimeout(() => {
+                        setFeedback(null);
+                        const newSet = new Set(completedSegments);
+                        if (currentInteractive) {
+                            newSet.add(currentInteractive.originalIndex);
+                        }
+                        setCompletedSegments(newSet);
+                    }, 600);
+                } else {
+                    setFeedback({ type: 'error', text: '❌ 逻辑不对哦，再读读题。' });
+                }
+            };
+
+            if (!currentInteractive) return null;
+
+            return (
+                <div className="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-2xl fade-in mt-6 shadow-sm">
+                    <h3 className="font-bold text-yellow-900 mb-4 flex items-center gap-2 text-lg">
+                        <span className="bg-yellow-200 text-yellow-800 text-sm px-3 py-1 rounded-full">思考</span>
+                        {currentInteractive.question}
+                    </h3>
+                    <div className="grid grid-cols-1 gap-3">
+                        {currentInteractive.options.map((opt, i) => (
+                            <button 
+                                key={i}
+                                onClick={() => handleOptionClick(opt.correct)}
+                                className="text-left p-4 bg-white border border-yellow-100 rounded-xl hover:bg-yellow-100 hover:border-yellow-400 transition-all shadow-sm font-bold text-gray-700 active:scale-98"
+                            >
+                                {opt.text}
+                            </button>
+                        ))}
+                    </div>
+                    {feedback && (
+                        <div className={`mt-4 p-3 rounded-lg text-center font-bold animate-pulse ${feedback.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {feedback.text}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const StrategySelector = ({ onSelect }) => (
+            <div className="fade-in text-center py-10">
+                <h2 className="text-2xl font-bold text-slate-800 mb-2">条件梳理完毕！</h2>
+                <p className="text-slate-500 mb-8">面对这些数量关系，下一步该怎么办？</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
+                    <button className="p-8 rounded-2xl border-2 border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed flex flex-col items-center gap-2">
+                        <span className="text-2xl">🧮</span>
+                        <span>列方程 (容易出错)</span>
+                    </button>
+                    <button onClick={onSelect} className="p-8 rounded-2xl border-2 border-blue-500 bg-white text-blue-700 font-bold hover:bg-blue-50 hover:shadow-xl transition-all transform hover:-translate-y-1 flex flex-col items-center gap-2">
+                        <span className="text-2xl">✏️</span>
+                        <span>画图分析 (推荐)</span>
+                    </button>
+                </div>
+            </div>
+        );
+
+        const Solver = ({ data, onFinish }) => {
+            const [inputs, setInputs] = useState(Array(data.questions.length).fill(""));
+            const [status, setStatus] = useState(Array(data.questions.length).fill("neutral")); 
+
+            const checkAnswer = (index, val) => {
+                const newInputs = [...inputs];
+                newInputs[index] = val;
+                setInputs(newInputs);
+
+                const newStatus = [...status];
+                if (val.trim() === data.questions[index].answer) {
+                    newStatus[index] = "correct";
+                } else {
+                    newStatus[index] = "neutral";
+                    if (val.trim().length >= data.questions[index].answer.length && val.trim() !== data.questions[index].answer) {
+                         newStatus[index] = "wrong";
+                    }
+                }
+                setStatus(newStatus);
+
+                if (newStatus.every(s => s === "correct")) {
+                    setTimeout(onFinish, 1500);
+                }
+            };
+
+            return (
+                <div className="fade-in mt-6">
+                    <div className="bg-white p-6 rounded-2xl border-t-4 border-blue-500 shadow-lg">
+                        <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            <span className="text-2xl">📐</span> 看图 · 填空
+                        </h3>
+                        
+                        <div className="mb-8 p-6 bg-slate-50 rounded-xl flex justify-center border border-slate-200 overflow-x-auto">
+                            {data.type === 'age_diff' && <AgeVisual data={data} />}
+                            {data.type === 'transfer' && <TransferVisual data={data} />}
+                            {data.type === 'multi_transfer' && <MultiTransferVisual data={data} />}
+                            {data.type === 'rope_measure' && <RopeVisual data={data} />}
+                            {data.type === 'age_timeline' && <TimeLineVisual data={data} />}
+                        </div>
+
+                        <div className="space-y-4">
+                            {data.questions.map((q, i) => (
+                                <div key={i} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${status[i] === 'correct' ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
+                                    <label className="text-slate-700 font-bold text-base flex-1 mr-4">
+                                        <span className="mr-2 text-slate-400">{i+1}.</span>
+                                        {q.label}
+                                        {q.hint && status[i] !== 'correct' && <span className="block text-xs text-slate-400 font-normal mt-1">{q.hint}</span>}
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            type="text" 
+                                            className={`input-box ${status[i]}`}
+                                            value={inputs[i]}
+                                            onChange={(e) => checkAnswer(i, e.target.value)}
+                                            placeholder="?"
+                                            disabled={status[i] === 'correct'}
+                                            autoFocus={i === 0 || (status[i-1] === 'correct' && status[i] !== 'correct')}
+                                        />
+                                        <span className="text-slate-500 font-bold text-sm w-8">{q.unit}</span>
+                                    </div>
+                                    {status[i] === 'correct' && <span className="text-green-500 text-xl ml-2">✓</span>}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        function App() {
+            const [currentProblemIdx, setCurrentProblemIdx] = useState(0);
+            const [phase, setPhase] = useState('translate'); 
+            const [completedSegments, setCompletedSegments] = useState(new Set());
+
+            const problem = problems[currentProblemIdx];
+            const phaseStepMap = { 'translate': 1, 'strategy': 2, 'solve': 3, 'success': 4 };
+            const currentStep = phaseStepMap[phase];
+
+            const nextProblem = () => {
+                setCurrentProblemIdx((prev) => (prev + 1) % problems.length);
+                setPhase('translate');
+                setCompletedSegments(new Set()); 
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto p-4 min-h-screen font-sans text-slate-800">
+                    <header className="mb-6 flex justify-between items-end border-b border-slate-200 pb-4">
+                        <div>
+                            <h1 className="text-2xl font-black text-slate-800 tracking-tight">📐 小学数学思维训练 v4.0</h1>
+                            <p className="text-sm text-slate-500 font-medium mt-1">精选逻辑题 · 交互式图解</p>
+                        </div>
+                        <div className="text-right">
+                            <span className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-bold">
+                                题号 {currentProblemIdx + 1} / {problems.length}
+                            </span>
+                        </div>
+                    </header>
+
+                    <div className="flex items-center gap-2 mb-8 px-4">
+                        {['翻译', '策略', '图解', '完成'].map((label, idx) => (
+                            <React.Fragment key={idx}>
+                                <div className={`flex flex-col items-center gap-1 ${currentStep >= idx + 1 ? 'text-blue-600' : 'text-slate-300'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-500 ${currentStep === idx + 1 ? 'bg-blue-600 text-white border-blue-600 scale-110' : currentStep > idx + 1 ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white border-slate-200'}`}>
+                                        {idx + 1}
+                                    </div>
+                                    <span className="text-xs font-medium">{label}</span>
+                                </div>
+                                {idx < 3 && <div className={`h-1 flex-1 rounded-full mx-2 transition-all duration-500 ${currentStep > idx + 1 ? 'bg-blue-500' : 'bg-slate-100'}`}></div>}
+                            </React.Fragment>
+                        ))}
+                    </div>
+
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm mb-6 relative overflow-hidden transition-all duration-500">
+                        <div className={`absolute top-0 left-0 w-2 h-full transition-colors duration-500 ${phase === 'success' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
+                        <h2 className="text-xl font-bold text-slate-800 mb-4">{problem.title}</h2>
+                        <div className="problem-text">
+                            {problem.content.map((seg, i) => {
+                                let className = "highlight-segment";
+                                const isCompleted = completedSegments.has(i);
+                                if (seg.type) {
+                                    if (phase !== 'translate' || isCompleted) {
+                                        className += " completed";
+                                    } else if (phase === 'translate') {
+                                        const interactiveIndices = problem.content.map((s, idx) => ({...s, idx})).filter(s => s.type).map(s => s.idx);
+                                        const firstUnfinished = interactiveIndices.find(idx => !completedSegments.has(idx));
+                                        if (i === firstUnfinished) className += " active";
+                                    }
+                                }
+                                return <span key={i} className={className}>{seg.text}</span>;
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="min-h-[300px]">
+                        {phase === 'translate' && (
+                            <Translator 
+                                problem={problem} 
+                                completedSegments={completedSegments}
+                                setCompletedSegments={setCompletedSegments}
+                                onComplete={() => setPhase('strategy')} 
+                            />
+                        )}
+
+                        {phase === 'strategy' && <StrategySelector onSelect={() => setPhase('solve')} />}
+
+                        {phase === 'solve' && <Solver data={problem.diagramData} onFinish={() => setPhase('success')} />}
+
+                        {phase === 'success' && (
+                            <div className="text-center py-12 fade-in bg-green-50 rounded-2xl border border-green-100">
+                                <div className="text-6xl mb-4">🎉</div>
+                                <h2 className="text-3xl font-black text-green-700 mb-2">挑战成功！</h2>
+                                <button onClick={nextProblem} className="mt-6 bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-full font-bold shadow-lg transition transform hover:-translate-y-1 text-lg">
+                                    下一题 →
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
