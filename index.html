@@ -23,9 +23,9 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
+<body class="min-h-screen flex items-center justify-center p-6 py-12">
 
-    <div class="max-w-5xl w-full">
+    <div class="max-w-6xl w-full">
         <!-- 页面头部 -->
         <header class="text-center mb-16">
             <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
@@ -37,7 +37,7 @@
         </header>
 
         <!-- 导航网格 -->
-        <main class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
             <!-- 模块 1 -->
             <a href="./basic_structure/index.html" class="nav-card group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
@@ -56,13 +56,30 @@
                 </div>
             </a>
 
-            <!-- 模块 2 -->
+            <!-- 模块 2 (新增) -->
+            <a href="./reading_and_translate/index.html" class="nav-card group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between border-sky-100">
+                <div>
+                    <div class="w-14 h-14 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-sky-600 group-hover:text-white transition-colors">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3">2. 读题翻译训练</h3>
+                    <p class="text-slate-500 leading-relaxed">
+                        初步练习如何从长段文字中提取关键信息，通过关键词识别将自然语言转化为标准数学条件。
+                    </p>
+                </div>
+                <div class="mt-8 flex items-center text-sky-600 font-bold">
+                    <span>进入模块</span>
+                    <i class="fas fa-chevron-right ml-2 group-hover:ml-4 transition-all"></i>
+                </div>
+            </a>
+
+            <!-- 模块 3 -->
             <a href="./animation/index.html" class="nav-card group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
                 <div>
                     <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                         <i class="fas fa-play-circle"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-slate-800 mb-3">2. 行程问题演示工具</h3>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3">3. 行程问题演示工具</h3>
                     <p class="text-slate-500 leading-relaxed">
                         支持直线与环形跑道模式。实时演示相遇问题与追及问题的动态过程，让抽象的运动过程可视化。
                     </p>
@@ -73,13 +90,13 @@
                 </div>
             </a>
 
-            <!-- 模块 3 -->
+            <!-- 模块 4 -->
             <a href="./draw_line_1/index.html" class="nav-card group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
                 <div>
                     <div class="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-orange-600 group-hover:text-white transition-colors">
                         <i class="fas fa-edit"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-slate-800 mb-3">3. 审题翻译训练-1</h3>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3">4. 审题翻译训练-1</h3>
                     <p class="text-slate-500 leading-relaxed">
                         基础训练模块。涵盖相遇问题、追及问题及火车过桥问题，重点培养将文字转化为物理模型的“翻译”能力。
                     </p>
@@ -90,13 +107,13 @@
                 </div>
             </a>
 
-            <!-- 模块 4 -->
+            <!-- 模块 5 -->
             <a href="./draw_line_2/index.html" class="nav-card group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
                 <div>
                     <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:bg-purple-600 group-hover:text-white transition-colors">
                         <i class="fas fa-brain"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-slate-800 mb-3">4. 审题翻译训练-2</h3>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3">5. 审题翻译训练-2</h3>
                     <p class="text-slate-500 leading-relaxed">
                         进阶挑战模块。针对多次往返、分段行程及复杂综合问题进行专项建模训练，提升高阶逻辑思维。
                     </p>
